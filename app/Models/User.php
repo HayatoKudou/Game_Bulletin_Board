@@ -18,8 +18,11 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'platform',
+        'player_id',
         'email',
         'password',
+        'api_token'
     ];
 
     /**

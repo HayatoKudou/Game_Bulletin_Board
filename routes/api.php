@@ -18,8 +18,9 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+Route::post('login', 'App\Http\Controllers\Api\AuthController@login');
+Route::post('register', 'App\Http\Controllers\Api\AuthController@register');
 
-Route::get('test', 'App\Http\Controllers\Api\AuthController@test');
 Route::post('playersProfileStats', 'App\Http\Controllers\Api\ApexController@playersProfileStats');
 Route::post('playerStatistics', 'App\Http\Controllers\Api\ApexController@playerStatistics');
 Route::post('searchApexPlayer', 'App\Http\Controllers\Api\ApexController@searchApexPlayer');
