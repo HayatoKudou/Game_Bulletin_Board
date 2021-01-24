@@ -20,6 +20,8 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 Route::post('login', 'App\Http\Controllers\Api\AuthController@login');
 Route::post('register', 'App\Http\Controllers\Api\AuthController@register');
+Route::post('apex_post', 'App\Http\Controllers\Api\ApexController@post');
+Route::post('apex_get_articles', 'App\Http\Controllers\Api\ApexController@get_articles');
 
 Route::post('playersProfileStats', 'App\Http\Controllers\Api\ApexController@playersProfileStats');
 Route::post('playerStatistics', 'App\Http\Controllers\Api\ApexController@playerStatistics');
