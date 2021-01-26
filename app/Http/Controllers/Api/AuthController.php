@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Article;
+use App\Models\Apex_player;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -12,8 +14,14 @@ use Log;
 use GuzzleHttp\Client;
 use DB;
 
+use Illuminate\Foundation\Auth\SendsPasswordResetEmails;
+use Illuminate\Support\Facades\Password;
+
+
 class AuthController extends Controller
 {
+    use SendsPasswordResetEmails;
+
     public function login(Request $request){
 
         $validator = Validator::make($request->all(), [
@@ -33,9 +41,11 @@ class AuthController extends Controller
             $token = Str::random(60);
             $user->api_token = $token;
             $user->save();
+            $articles = Article::orderBy('created_at', 'desc')->get();
             return [
                 "token" => $token,
-                "user" => $user
+                "user" => $user,
+                "articles" => $articles,
             ];
         }else{
             return abort(401);
@@ -43,7 +53,7 @@ class AuthController extends Controller
     }
 
     public function register(Request $request){
-        
+
         DB::beginTransaction();
 
         try {
@@ -100,10 +110,29 @@ class AuthController extends Controller
                     'api_token' => $token,
                 ]);
                 $user_model->save();
+
+                //apex_playerに登録
+                $apex_player_mode = new Apex_player;
+                $apex_player_mode->fill([
+                    'user_id' => $user_model->id,
+                    'platformSlug' => $response['data']['platformInfo']['platformSlug'],
+                    'platformUserId' => $response['data']['platformInfo']['platformUserId'],
+                    'avatarUrl' => $response['data']['platformInfo']['avatarUrl'],
+                    'level' => $response['data']['segments'][0]['stats']['level']['value'],
+                    'kills' => $response['data']['segments'][0]['stats']['kills']['value'],
+                    'damage' => $response['data']['segments'][0]['stats']['damage']['value'],
+                    'rankScore' => $response['data']['segments'][0]['stats']['rankScore']['value'],
+                    'rankScore_iconUrl' => $response['data']['segments'][0]['stats']['rankScore']['metadata']['iconUrl'],
+                ]);
+                $apex_player_mode->save();
+
                 DB::commit();
+                $articles = Article::orderBy('created_at', 'desc')->get();
                 return [
                     "token" => $token,
-                    "user" => $user_model
+                    "user" => $user_model,
+                    "articles" => $articles,
+                    "apex_player" => $apex_player_mode,
                 ];
             }else{
                 return abort(401);
@@ -113,4 +142,19 @@ class AuthController extends Controller
             return abort(401);
         }
     }
+
+    public function sendResetLinkEmail(Request $request)
+    {
+        Log::debug($request);
+        $this->validateEmail($request);
+
+        $response = $this->broker()->sendResetLink(
+            $request->only('email')
+        );
+
+        return $response == Password::RESET_LINK_SENT
+            ? response()->json(['message' => 'Reset link sent to your email.', 'status' => true], 201)
+            : response()->json(['message' => 'Unable to send reset link', 'status' => false], 401);
+    }
+
 }

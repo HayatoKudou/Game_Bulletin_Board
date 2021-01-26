@@ -20,9 +20,11 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 Route::post('login', 'App\Http\Controllers\Api\AuthController@login');
 Route::post('register', 'App\Http\Controllers\Api\AuthController@register');
+Route::post('password/reset', 'App\Http\Controllers\Api\AuthController@sendResetLinkEmail');
+
 Route::post('apex_post', 'App\Http\Controllers\Api\ApexController@post');
+Route::post('apex_delete_article', 'App\Http\Controllers\Api\ApexController@delete_article');
 Route::post('apex_get_articles', 'App\Http\Controllers\Api\ApexController@get_articles');
 
-Route::post('playersProfileStats', 'App\Http\Controllers\Api\ApexController@playersProfileStats');
-Route::post('playerStatistics', 'App\Http\Controllers\Api\ApexController@playerStatistics');
-Route::post('searchApexPlayer', 'App\Http\Controllers\Api\ApexController@searchApexPlayer');
+Route::post('get_notice', 'App\Http\Controllers\Api\ApexController@get_notice');
+Route::post('clear_notice', 'App\Http\Controllers\Api\ApexController@clear_notice');

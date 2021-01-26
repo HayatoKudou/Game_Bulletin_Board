@@ -13,9 +13,13 @@ class Article extends Model
 
     protected $fillable = [
         'reply_id',
+        'reply_count',
         'user_id',
         'user_name',
-        'platform',
+        'platform_pc',
+        'platform_xbox',
+        'platform_playstation',
+        'platform_all',
         'comment',
         'report',
         'tag_vc_yes',
