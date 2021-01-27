@@ -10,6 +10,7 @@ use Log;
 use Illuminate\Support\Str;
 use App\Models\User;
 use App\Models\Article;
+use App\Models\Notice;
 use App\Models\Apex_player;
 use App\Models\Guest_user;
 use DB;
@@ -41,8 +42,22 @@ class ApexController extends Controller
                 ];
             }
 
+            $user_name = $request->player_name;
+            $comment = $request->comment;
             $reply_id = $request->reply_id;
             $user_id = $request->player_id;
+
+            //返信のお知らせ登録
+            if(!is_null($reply_id)){
+                $article_model = Article::find($reply_id);
+                $notice_model = new Notice;
+                $notice_model->fill([
+                    'user_id' => $article_model->user_id,
+                    'notice' => $user_name . 'さんから返信がありました。',
+                ]);
+                $notice_model->save();
+            }
+
             if(is_null($user_id)){
                 //ゲストユーザーを登録
                 $guest_user_model = new Guest_user;
@@ -53,8 +68,6 @@ class ApexController extends Controller
                 $guest_user_model->save();
                 $user_id = $guest_user_model->id;
             }
-            $user_name = $request->player_name;
-            $comment = $request->comment;
             $platform = array_filter(explode(',', $request->platform));
             if(!$platform){
                 $platform[] = 'all';
@@ -122,14 +135,23 @@ class ApexController extends Controller
     }
 
     public function get_notice(Request $request){
+        $user_id = $request->user_id;
+        $notice = Notice::where('user_id', $user_id)->where('active', 1)->get();
         return [
-            'count' => 2,
+            "notice" => $notice,
         ];
     }
 
-    public function clear_notice(){
+    public function clear_notice(Request $request){
+        $user_id = $request->user_id;
+        $notice_model = Notice::where('user_id', $user_id)->get();
+        foreach($notice_model as $data){
+            $data->fill(['active' => 0]);
+            $data->save();
+        }
+        $notice = Notice::where('active', 1)->get();
         return [
-            'count' => 0,
+            'notice' => $notice,
         ];
     }
 }
