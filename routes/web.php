@@ -22,3 +22,5 @@ Route::group(['middleware' => ['api', 'cors']], function(){
 });
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('web_push/create', [App\Http\Controllers\WebPushController::class, 'create']);
+Route::post('web_push', 'WebPushController@store');
