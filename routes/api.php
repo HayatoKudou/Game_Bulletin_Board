@@ -21,6 +21,7 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 Route::post('login', 'App\Http\Controllers\Api\AuthController@login');
 Route::post('register', 'App\Http\Controllers\Api\AuthController@register');
 Route::post('password/reset', 'App\Http\Controllers\Api\AuthController@sendResetLinkEmail');
+Route::post('contact', 'App\Http\Controllers\Api\AuthController@contact');
 
 Route::post('apex_post', 'App\Http\Controllers\Api\ApexController@post');
 Route::post('apex_delete_article', 'App\Http\Controllers\Api\ApexController@delete_article');

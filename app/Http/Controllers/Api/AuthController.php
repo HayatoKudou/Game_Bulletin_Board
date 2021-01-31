@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Validator;
 use Log;
 use GuzzleHttp\Client;
 use DB;
+use Mail;
 
 use Illuminate\Foundation\Auth\SendsPasswordResetEmails;
 use Illuminate\Support\Facades\Password;
@@ -60,7 +61,7 @@ class AuthController extends Controller
             $validator = Validator::make($request->all(), [
                 'platform' => 'required|max:20',
                 'player_id' => 'required|max:30',
-                'email' => 'max:30|string|email|max:255|unique:users',
+                'email' => 'string|email|max:255|unique:users',
                 'password' => 'required|string',
             ]);
             if ($validator->fails()) {
@@ -115,15 +116,19 @@ class AuthController extends Controller
                 $apex_player_mode = new Apex_player;
                 $apex_player_mode->fill([
                     'user_id' => $user_model->id,
-                    'platformSlug' => $response['data']['platformInfo']['platformSlug'],
-                    'platformUserId' => $response['data']['platformInfo']['platformUserId'],
-                    'avatarUrl' => $response['data']['platformInfo']['avatarUrl'],
-                    'level' => $response['data']['segments'][0]['stats']['level']['value'],
-                    'kills' => $response['data']['segments'][0]['stats']['kills']['value'],
-                    'damage' => $response['data']['segments'][0]['stats']['damage']['value'],
-                    'rankScore' => $response['data']['segments'][0]['stats']['rankScore']['value'],
-                    'rankScore_iconUrl' => $response['data']['segments'][0]['stats']['rankScore']['metadata']['iconUrl'],
                 ]);
+                if ($platform !== 'all') {
+                    $apex_player_mode->fill([
+                        'platformSlug' => $response['data']['platformInfo']['platformSlug'],
+                        'platformUserId' => $response['data']['platformInfo']['platformUserId'],
+                        'avatarUrl' => $response['data']['platformInfo']['avatarUrl'],
+                        'level' => $response['data']['segments'][0]['stats']['level']['value'],
+                        'kills' => $response['data']['segments'][0]['stats']['kills']['value'],
+                        'damage' => $response['data']['segments'][0]['stats']['damage']['value'],
+                        'rankScore' => $response['data']['segments'][0]['stats']['rankScore']['value'],
+                        'rankScore_iconUrl' => $response['data']['segments'][0]['stats']['rankScore']['metadata']['iconUrl'],
+                    ]);
+                }
                 $apex_player_mode->save();
 
                 DB::commit();
@@ -143,18 +148,56 @@ class AuthController extends Controller
         }
     }
 
+    //リセットメール送信
     public function sendResetLinkEmail(Request $request)
     {
-        Log::debug($request);
-        $this->validateEmail($request);
-
+        $validator = Validator::make($request->all(), [
+            'email' => 'max:255|string|email',
+        ]);
+        if ($validator->fails()) {
+            return [
+                'errors' => $validator->messages(),
+            ];
+        }
+        $user_model = User::where('email', $request->email)->exists();
+        if(!$user_model){
+            return [
+                'errors' => ['メールアドレスが登録されていません。'],
+            ];
+        }
         $response = $this->broker()->sendResetLink(
             $request->only('email')
         );
-
         return $response == Password::RESET_LINK_SENT
             ? response()->json(['message' => 'Reset link sent to your email.', 'status' => true], 201)
             : response()->json(['message' => 'Unable to send reset link', 'status' => false], 401);
+    }
+
+    public function contact(Request $request){
+        Log::debug($request);
+        try {
+            $validator = Validator::make($request->all(), [
+                'contents' => 'required|max:255',
+            ]);
+            if ($validator->fails()) {
+                return [
+                    'errors' => $validator->messages(),
+                ];
+            }
+            Mail::send('emails.mail', [
+                'email' => $request->email,
+                'contents' => $request->contents,
+            ], function($message){
+                $message->to('kudoh115@gmail.com')
+                ->from('hayatoportfolio@gmail.com')
+                ->subject('gamer-lab.netからのお問い合わせ');
+            });
+            return [
+                'message' => 'お問い合わせを受け付けました。'
+            ];
+        } catch (Exception $e) {
+            return abort(401);
+        }
     }
 
 }

@@ -20,7 +20,7 @@ class ApexController extends Controller
 {
 
     public function get_articles(Request $request){
-        $articles = Article::orderBy('created_at', 'desc')->get();
+        $articles = Article::orderBy('created_at', 'desc')->take(50)->get();
         $apex_player = Apex_player::where('user_id', $request->user_id)->first();
         return [
             "articles" => $articles,
@@ -101,7 +101,7 @@ class ApexController extends Controller
             DB::commit();
 
             //全記事取得
-            $articles = Article::orderBy('created_at', 'desc')->get();
+            $articles = Article::orderBy('created_at', 'desc')->take(50)->get();
             if(isset($guest_user_model)){
                 return [
                     "articles" => $articles,
@@ -126,7 +126,7 @@ class ApexController extends Controller
             $article_model = Article::where('id', $article_id)->where('user_id', $user_id)->first();
             $article_model->delete();
             DB::commit();
-            $articles = Article::orderBy('created_at', 'desc')->get();
+            $articles = Article::orderBy('created_at', 'desc')->take(50)->get();
             return ["articles" => $articles];
         } catch (Exception $e) {
             DB::rollback();
